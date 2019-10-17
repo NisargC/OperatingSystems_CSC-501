@@ -1,0 +1,39 @@
+Q) What are the advantages and disadvantages of each of the two scheduling policies? Also, give the advantages and disadvantages of the round robin scheduling policy originally implemented
+in Xinu.
+A)
+Exponential Distribution Scheduler -
+	Advantages-
+	The scheduling mechanism follows Exponential Distribution, so the lower priority processes will not get starved.
+	is a degree of randomization in the processing, this means that the processes will not get scheduled in the same order every time.
+
+	Disadvantages-
+	The higher priority processes will get starved. Which can be shown in the output
+	A(prio = 10) = 112710, B(prio = 20) = 46707, C(prio = 30) = 23318
+
+Linux Scheduler -
+	Advantages-
+	It guarentees that processes are run based on their goodness
+	There is no randomization allowed, so we have predictable patterns
+
+	Disadvantages-
+	There is an overhead involved for the calculation which needs to be taken into account when we have a large number of processes in the system.
+
+Round Robin(Xinu Scheduling) -
+	Advantages-
+	Higher priority processes get more cpu time
+	Faster scheduling due to simple algorithm
+
+	Disadvantages-
+	Low priority processes get starved.
+
+Q) Describe the way each of the schedulers affects the NULL process.
+A)
+Exponential Distribution Scheduler-
+We schedule the NULL process when there is no other processes in ready queue.
+
+Linux-like Scheduler-
+We will not schedule the NULL process as its goodness value is always set to 0.
+
+Xinu Scheduling-
+NULL process will not be scheduled.
+

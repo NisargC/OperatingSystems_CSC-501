@@ -1,0 +1,76 @@
+1) The priority inversion problem could cause that a higher-priority process needs to wait for the completion of a lower-priority process.
+1.1) Priority inheritance is one approach to address this issue. Please give another approach and briefly describe its idea.
+1.2) Design a test case to show that your approach can address the priority inversion problem. You should compare the results that derived from the original XINU implementation (use semaphore) and that derived from your implementation (use readers/writer locks). Put your results in Lab3Answers.txt and your test case program (name it task1.c) in both ./sys and ./TMP
+
+A 1.1)
+	Consider three processes L, M and H with priority such that L<M<H.
+L is running in CS ; H also needs to run in CS ; H waits for L to come out of CS ; M interrupts L and starts running ; M runs till completion and relinquishes control ; L resumes and starts running till the end of CS ; H enters CS and starts running.
+Note that neither L nor H share CS with M.
+
+Here, we can see that running of M has delayed the running of both L and H. Precisely speaking, H is of higher priority and doesn’t share CS with M; but H had to wait for M. This is where Priority based scheduling didn’t work as expected because priorities of M and H got inverted in spite of not sharing any CS. This problem is called Priority Inversion. In a system with priority-based scheduling, higher priority tasks can face this problem and it can result in unexpected behavior/result. In general purpose OS, it can result in slower performance.
+
+Solutions::
+	Priority Inheritance:
+In Priority Inheritance, when L is in critical section, L inherits priority of H at the time when H starts pending for critical section. By doing so, M doesn’t interrupt L and H doesn’t wait for M to finish. Please note that inheriting of priority is done temporarily i.e. L goes back to its old priority when L comes out of critical section.
+
+	Random Boosting:
+Ready threads holding locks are randomly boosted in priority and allowed to run long enough to exit the critical section. If the thread doesn't get enough time to release the lock, it will get another chance. Random boosting is a strategy used by the scheduler in Windows to avoid deadlock due to priority inversion.
+
+	Priority Switch:
+Another lesser used approach is that we can use the priority switch which was used in the Linux-like scheduler for PA1. The process that has the highest goodness value (it uses the round-robin strategy if there are processes with the same goodness value) can be given the lock. The process that holds lock will keep running without being preempted.
+
+A 1.2)
+	Consider the case where we have 3 processes A, B and C with priorities of 20, 30 and 40 respectively.
+Now when we use semaphores for these processes, A gets scheduled first and enters the critical section. While A is sleeping, process B gets scheduled and it starts execution. After that if process C comes, even though it is a high priority process, it has to wait until A and B have completed their execution.
+This is the problem of priority inversion which is present in original XINU implementation (using semaphores). This can be clearly seen from the output for task1.c pasted below.
+
+Using the approach of readers/writers lock, this problem is solved in the following way. Consider the same scenario as above with 3 processes A, B and C. Process A starts execution as it is first, but when it sees that process C has higher priority, A's priority gets ramped up before going to sleep. Now B gets to run and runs for some time until C is not encountered. When C comes in, C gets to run as it has higher priority than B, so the execution of B gets completed only when all the higher priority processes have completed their executions. This solves the inversion problem as higher priority processes will get their due in CPU execution time.
+This is evident from the output of task1.c pasted below in the section "Testing with reader/writer locks using priority inversion.". This is how the priority inversion problem is handled in this code.
+
+OUTPUT FOR TASK1.C :-
+Testing with semaphores.
+Starting A.
+A
+A: in CS
+Starting B.
++++++B before sleep
++++++B after waking up
+Starting C.
+C
+A: moving outside CS.
+C: in CS
+C: moving outside CS.
+
+Testing with reader/writer locks using priority inversion.
+Starting A.
+Process A
+A: Lock acquired.
+Starting B.
++++++B before sleep
+Starting C.
+Process C
+A: Releasing lock.
+C: Lock acquired
+C: Releasing lock
++++++B after waking up
+
+
+2) Synchronization is a quite complex issue in operating systems. To show your understanding about process synchronization, you are asked to point out a reader/writer synchronization issue in this pesudo-code: task2_sync_issue.c. Multiple reader threads can execute this code concurrently by calling do_update. All the variables starting with global_ are global variables. You are asked to describe the potential issue caused by the incorrect synchronization and point out at least one possible thread interleaving that would trigger the problem. Put your answer in Lab3Answers.txt mentioned above.
+
+A 2)
+Based on the code:
+Multiple readers can enter the do_update() function and acquire the lock. Once this happens, try_update() is called. Multiple processes can potentially call the buffer_add method at the same time. This leads to synchronization issues as all reader processes are updating the same value.
+
+One process acquires the read lock and performs some write operations.
+Another process acquires the lock (as semaphore is 10) at the same time, since read locks are not exclusive, and now this process also modifies the data value.
+In such a case, multiple processes are performing write operation which is not exclusive, and hence it leads to inconsistency in the data value.
+
+One possible thread interleaving that would trigger the problem is when we reschedule the process when it is writing into the buffer,
+Reader A
+resched()	(When Reader A is writing the value into buffer)
+Reader B
+resched()	(When Reader B is writing the value into buffer)
+Reader A
+resched()
+
+This interleaving would cause data inconsistency and lead to concurrency bugs.

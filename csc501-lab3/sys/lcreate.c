@@ -14,29 +14,29 @@ int lcreate()
 	STATWORD ps;    
 	disable(ps);
 
-	int status=-1,index,counter=0;
+	int status=-1,lockIndex,lockCounter=0;
 
 	/* Go through all the available locks to see if any are free */
-	while(counter < NLOCKS && status == -1){
-		index = nextlock--;
+	while(lockCounter < NLOCKS && status == -1){
+		lockIndex = nextlock--;
 		if(nextlock < 0){
 			locks_traverse += 1;
 			nextlock = NLOCKS - 1;
 		}
-		if(locks[index].lockState != LFREE){
-			status = SYSERR;
-		} else if(locks[index].lockState == LFREE){
-			status = index*10 + locks_traverse;
-			locks[index].lockState = LUSED;
-			locks[index].num_reader = 0;
-			locks[index].num_writer = 0;
+		if(locks[lockIndex].lockState != LFREE){
+			status = -1;
+		} else if(locks[lockIndex].lockState == LFREE){
+			status = lockIndex*10 + locks_traverse;
+			locks[lockIndex].lockState = LUSED;
+			locks[lockIndex].num_reader = 0;
+			locks[lockIndex].num_writer = 0;
 			break;
 		}
-		counter++;
+		lockCounter++;
 	}
 
-	/* Got SYSERR from the above loop as all the locks are being used */
-	if(status==-1){
+	/* Status did not get updated as all the locks are being used, returning SYSERR */
+	if(status == -1){
 		restore(ps);
 		return(SYSERR);
 	}

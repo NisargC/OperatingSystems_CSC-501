@@ -16,7 +16,7 @@ struct lockentry {
     int  lockqueueHead;
     int  lockqueueTail;
     int  lockPriority;
-    int  proc_log[NPROC];
+    int  procLog[NPROC];
 };
 
 extern struct lockentry locks[];

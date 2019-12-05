@@ -161,7 +161,7 @@ LOCAL int sysinit()
 		proctab[i].pstate = PRFREE;
 		j=0;
 		while(j<NLOCKS){
-			proctab[i].lock_log[j] = 0;
+			proctab[i].lockLog[j] = 0;
 			j++;
 		}
 		i++;

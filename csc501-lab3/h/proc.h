@@ -65,7 +65,7 @@ struct	pentry	{
 	int	pwaitret;
 	int l_proc;				/* Lock id */
     int pinh;				/* inherited priority */
-    int lock_log[NLOCKS];	/* array of locks held */
+    int lockLog[NLOCKS];	/* array of locks held */
 	int plockret;			/* Whether the lock is DELETED or not */
 };
 

@@ -59,18 +59,18 @@ SYSCALL kill(int pid)
     case PROC_LOCK:
 		/* Newly added for Read/Write lock process handling*/
 		lock_ptr = &locks[pptr->l_proc];
-	    if(lock_ptr->proc_log[currpid] == 0){
-        	swapPriority(lock_ptr->proc_log[currpid],lock_ptr->proc_log[currpid]+1);
-    	} else if(lock_ptr->proc_log[currpid] > 0){
+	    if(lock_ptr->procLog[currpid] == 0){
+        	swapPriority(lock_ptr->procLog[currpid],lock_ptr->procLog[currpid]+1);
+    	} else if(lock_ptr->procLog[currpid] > 0){
 			temp = 0;
         	while(temp < 0){
-            	swapPriority(lock_ptr->proc_log[currpid]+NLOCKS,lock_ptr->proc_log[currpid]);
+            	swapPriority(lock_ptr->procLog[currpid]+NLOCKS,lock_ptr->procLog[currpid]);
         	}
     	}
     	else{
-        	swapPriority(lock_ptr->proc_log[currpid]+NLOCKS,lock_ptr->proc_log[currpid]+NPROC);
+        	swapPriority(lock_ptr->procLog[currpid]+NLOCKS,lock_ptr->procLog[currpid]+NPROC);
     	}
-		lockHandleKillProcess(pid);
+		lock_HandleKillProcess(pid);
 		break;
 	case PRSLEEP:
 	case PRTRECV:	unsleep(pid);
@@ -82,18 +82,18 @@ SYSCALL kill(int pid)
 }
 
 /* Handling the kill call and updating priority of lock accordingly */
-void lockHandleKillProcess(int pid){
+void lock_HandleKillProcess(int pid){
 	struct	pentry	*pptr;	
 	struct  lockentry *lptr;
 	dequeue(pid);
 	pptr = &proctab[pid];
 	lptr = &locks[pptr->l_proc];
 
-	locks[pptr->l_proc].proc_log[pid] = 0;
+	locks[pptr->l_proc].procLog[pid] = 0;
 	modifyLockPriority(pptr->l_proc);
 	int lockid;
 	for(lockid=0; lockid < NPROC; lockid++){
-		if(lptr->proc_log[lockid] > 0)
+		if(lptr->procLog[lockid] > 0)
 			updateLockPriority(lockid);
 	}
 	pptr->pstate = PRFREE;

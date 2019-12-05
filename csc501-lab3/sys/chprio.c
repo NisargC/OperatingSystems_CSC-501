@@ -29,19 +29,8 @@ SYSCALL chprio(int pid, int newprio)
 		insert(pid, rdyhead, pptr -> pprio);
 	}
 
-	int flag = updatePriority(pid, newprio);
-	if(flag == -1){
-		restore(ps);
-		return(SYSERR);
-	}
-	restore(ps);
-	return(newprio);
-}
-
-/* Updating lock priority if user updates the process priority */
-int updatePriority(int pid, int newprio) {
+	/* Updating lock priority if user updates the process priority */
 	int lockCount = 1;
-	struct	pentry	*pptr;
 
 	/* Reset lock count if pid is invalid, priority is invalid or the lock is free */
 	if (isbadpid(pid) || newprio<=0 || (pptr = &proctab[pid])->pstate == PRFREE) {
@@ -54,5 +43,11 @@ int updatePriority(int pid, int newprio) {
 		lockCount = 1;
 		break;
 	}
-	return(lockCount);
+
+	if(lockCount == -1){
+		restore(ps);
+		return(SYSERR);
+	}
+	restore(ps);
+	return(newprio);
 }

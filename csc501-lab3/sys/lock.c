@@ -34,7 +34,7 @@ int lock(int ldes1, int type, int priority) {
     if(lock < 0){
         while(lptr->lockState==PRFREE){
             lptr->lockState = READ;
-            lptr->num_reader = lptr->proc_log[lock];
+            lptr->num_reader = lptr->procLog[lock];
         }
     }
     int reader_count = lptr->num_reader,writer_count = lptr->num_writer;
@@ -69,8 +69,8 @@ int lock(int ldes1, int type, int priority) {
 
     int check=1;
     if(should_wait == 0){
-            lptr->proc_log[currpid] = 1;
-            proctab[currpid].lock_log[lock] = 1;
+            lptr->procLog[currpid] = 1;
+            proctab[currpid].lockLog[lock] = 1;
             updateLockPriority(currpid);
             switch(type){
                 case READ:
@@ -91,7 +91,7 @@ int lock(int ldes1, int type, int priority) {
             temp_lock = &locks[lock];
             int i=0;
             while(i < NPROC){
-                if(temp_lock->proc_log[i] > 0)
+                if(temp_lock->procLog[i] > 0)
                     updateLockPriority(i);
                 i++;
             }
@@ -100,17 +100,17 @@ int lock(int ldes1, int type, int priority) {
             restore(ps);
             return(pptr->plockret);
     }
-    if(lptr->proc_log[currpid] == 0){
-        swapPriority(lptr->proc_log[currpid],lptr->proc_log[currpid]+1);
+    if(lptr->procLog[currpid] == 0){
+        swapPriority(lptr->procLog[currpid],lptr->procLog[currpid]+1);
     }
-    else if(lptr->proc_log[currpid] > 0){
+    else if(lptr->procLog[currpid] > 0){
         int i=0;
         while(i < 0){
-            swapPriority(lptr->proc_log[currpid]+NLOCKS,lptr->proc_log[currpid]);
+            swapPriority(lptr->procLog[currpid]+NLOCKS,lptr->procLog[currpid]);
         }
     }
     else{
-        swapPriority(lptr->proc_log[currpid]+NLOCKS,lptr->proc_log[currpid]+NPROC);
+        swapPriority(lptr->procLog[currpid]+NLOCKS,lptr->procLog[currpid]+NPROC);
     }
 
     restore(ps);
@@ -144,25 +144,4 @@ int set_params(int proc_id,int prio,int type,int lock){
     q[proc_id].qtype = type;
     q[proc_id].qtime = ctr1000;
     return(OK);
-}
-
-void releaseWriter(int l_id, int p) {
-    struct lockentry *lptr;
-    lptr = &locks[l_id];
-    lptr->proc_log[p] = 1;
-    proctab[currpid].lock_log[l_id] = 1;
-    if(q[p].qtype == READ) {
-        lptr->num_reader += 1;
-    } else if (q[p].qtype == WRITE) {
-        lptr->num_writer += 1;
-    }
-
-    modifyLockPriority(l_id);
-    int i;
-    for(i=0; i < NPROC;i++){
-        if(lptr->proc_log[i] > 0)
-            updateLockPriority(i);
-    }
-    dequeue(p);
-    ready(p, RESCHNO);
 }

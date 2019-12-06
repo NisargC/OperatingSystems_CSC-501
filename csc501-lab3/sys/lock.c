@@ -8,7 +8,6 @@ int lock(int ldesc, int type, int priority) {
     STATWORD ps;    
     disable(ps);
 
-    int count = 10;
     struct lockentry *lptr;
     struct pentry *pptr;
 
@@ -21,46 +20,46 @@ int lock(int ldesc, int type, int priority) {
 		return(SYSERR);
 	}
 
-    int lock_index = ldesc;
-    int iter;
-    for (iter = 0; iter<count; iter++){
-        lock_index -= lock;
-    }
+    int lockIndex = ldesc - lock * 10;
 
-    if(iter == count && locks_traverse != lock_index){
+    if(locks_traverse != lockIndex) {
         restore(ps);
         return(SYSERR);
     }
 
     int should_wait = 0;
-    if(lock < 0){
-        while(lptr->lockState==PRFREE){
+    if(lock < 0) {
+        while(lptr->lockState==PRFREE) {
             lptr->lockState = READ;
             lptr->num_reader = lptr->procLog[lock];
         }
     }
-    int reader_count = lptr->num_reader,writer_count = lptr->num_writer;
-    if(reader_count<0 || writer_count<0){
+
+    int readerCount = lptr->num_reader;
+    int writerCount = lptr->num_writer;
+    if(readerCount<0 || writerCount<0) {
         restore(ps);
         return(SYSERR);
     }
 
-    if(reader_count == 0){
-        if(writer_count == 0){
+    if(readerCount == 0) {
+        if(writerCount == 0) {
             should_wait = 0;
         }
-        else if(writer_count!=0){
+        else if(writerCount != 0) {
             should_wait = 1;
         }
-    }else {
-        if(writer_count == 0){
-            if(type == WRITE){
+    } else {
+        if(writerCount == 0) {
+            if(type == WRITE) {
                 should_wait = 1;
             }
             else if(type == READ){
                 int lock_desc = q[lptr->lockqueueTail].qprev;
-                while(priority < q[lock_desc].qkey){
-                    if(q[lock_desc].qtype == WRITE){
+                /* Find a process with priority greater than the lock's priority */
+                while(q[lock_desc].qkey > priority) {
+                    /* If any of the elements are WRITE lock, we should wait */
+                    if(q[lock_desc].qtype == WRITE) {
                         should_wait = 1;
                     }
                     lock_desc = q[lock_desc].qprev;
@@ -69,7 +68,6 @@ int lock(int ldesc, int type, int priority) {
         }
     }
 
-    int check=1;
     if(should_wait == 0){
             lptr->procLog[currpid] = 1;
             proctab[currpid].lockLog[lock] = 1;
@@ -84,7 +82,8 @@ int lock(int ldesc, int type, int priority) {
             restore(ps);
             return(OK);
     } else if (should_wait == 1){
-            check = set_params(currpid,priority,type,lock);
+            setProcParams(currpid,priority,type,lock);
+
             modifyLockPriority(lock);
             struct lockentry *temp_lock;
             temp_lock = &locks[lock];
@@ -123,29 +122,37 @@ int lock(int ldesc, int type, int priority) {
 void modifyLockPriority(int lockID){
     struct lockentry *lptr;
     lptr = &locks[lockID];
-    int x = q[lptr->lockqueueTail].qprev;
+    int processID = q[lptr->lockqueueTail].qprev;
     int max=0;
 
-    while(x != lptr->lockqueueHead){
-        if(proctab[x].pprio > max){
-            max = proctab[x].pprio;
+    while(processID != lptr->lockqueueHead){
+        if(proctab[processID].pprio > max){
+            max = proctab[processID].pprio;
         }
-        x = q[x].qprev;
+        processID = q[processID].qprev;
     }
     lptr->lockPriority = max;
 }
 
-int set_params(int proc_id,int prio,int type,int lock){
+/* Generic helper method to set the process parameters when the process goes into locked state */
+int setProcParams(int proc_id,int prio,int type,int lock) {
     struct pentry *pptr;
-    struct lockentry *lptr;
-    lptr = &locks[lock];
     pptr = &proctab[proc_id];
+
+    /* Setting the lock's state as in locked state */
     pptr->pstate = PROC_LOCK;
     pptr->lockProcID = lock;
     pptr->plockret = OK;
-    insert(proc_id,lptr->lockqueueHead,prio);
-    q[proc_id].qtype = type;
-    q[proc_id].qtime = ctr1000;
+
+    /* Inserting the current process in the lock's queue with the requested priority */
+    struct lockentry *lptr;
+    lptr = &locks[lock];
+
+    insert(currpid,lptr->lockqueueHead,prio);
+
+    /* Setting up the queue's type and time */
+    q[currpid].qtype = type;
+    q[currpid].qtime = ctr1000;
     return(OK);
 }
 

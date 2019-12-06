@@ -37,18 +37,24 @@ SYSCALL chprio(int pid, int newprio)
 		lockCount = -1;
 	}
 
+	/* If process is locked, update the priority based on max in the queue */
 	updateLockPriority(pid);
 	while(pptr->pstate == PROC_LOCK){
-		modifyLockPriority(pptr->lockProcID);
-		updateLockPriority(pptr->lockProcID);
-		lockCount = 1;
-		break;
+		if(lockCount < 2) {
+			/* If lock count is not invalid, update the process's priority */
+			modifyLockPriority(pptr->lockProcID);
+			updateLockPriority(pptr->lockProcID);
+			lockCount = 1;
+			break;
+		}
 	}
 
+	/* If lock count is still set at -1, that is an error */
 	if(lockCount == -1){
 		restore(ps);
 		return(SYSERR);
 	}
+
 	restore(ps);
 	return(newprio);
 }

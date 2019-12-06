@@ -15,9 +15,9 @@ void semaphore1_test(int s1){
 }
 
 void semaphore2_test(int s2){
-        kprintf("+++++B before sleep\n");
+        kprintf("B before sleep\n");
         sleep(1);
-        kprintf("+++++B after waking up\n");
+        kprintf("B after waking up\n");
 }
 
 void semaphore3_test(int s3){
@@ -39,9 +39,9 @@ void lock1_test(int l1){
 }
 
 void lock2_test(int l2){
-        kprintf("+++++B before sleep\n");
+        kprintf("B before sleep\n");
         sleep(3);
-        kprintf("+++++B after waking up\n");
+        kprintf("B after waking up\n");
 }
 
 void lock3_test(int l3){

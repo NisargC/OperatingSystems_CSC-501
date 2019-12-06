@@ -14,35 +14,19 @@ int releaseall(int numlocks, int args, ...)
     unsigned long readlock_time, writelock_time;
     struct lockentry *lptr;
     int lockCount;
-    for (lockCount = 0; lockCount < numlocks; lockCount++)
-    {
+    for (lockCount = 0; lockCount < numlocks; lockCount++) {
         int releaseProcFlag = -1;
+        
+        /* Getting the lock based on how many were passed and which lock count we are on */
         lock = (int)(*((&args) + lockCount) / 10);
         lock_index = *((&args) + lockCount) - lock * 10;
+
         lptr = &locks[lock];
-        if (lock < 0 && NLOCKS < 0)
-        {
-            while (lptr->lockState == PRFREE)
-            {
-                lptr->lockState = READ;
-                lptr->num_reader = lptr->procLog[lock];
-                lptr->lockqueueHead = q[type_lock].qkey;
-            }
-        }
-        if (lptr->procLog[currpid] == 0)
-        {
-            swapPriority(lptr->procLog[currpid], lptr->procLog[currpid] + 1);
-        }
-        else if (lptr->procLog[currpid] > 0)
-        {
-            while (lockCount < 0)
-            {
-                swapPriority(lptr->procLog[currpid] + NLOCKS, lptr->procLog[currpid]);
-            }
-        }
-        else
-        {
-            swapPriority(lptr->procLog[currpid] + NLOCKS, lptr->procLog[currpid] + NPROC);
+
+        /* Should not come here with lock not acquired for current proc. Set to 1 */
+        if (lptr->procLog[currpid] == 0) {
+            lptr->procLog[currpid] = lptr->procLog[currpid] + 1;
+            /*swapPriority(lptr->procLog[currpid], lptr->procLog[currpid] + 1);*/
         }
 
         lptr->procLog[currpid] = 0;
@@ -50,20 +34,15 @@ int releaseall(int numlocks, int args, ...)
         updateLockPriority(currpid);
 
         /* Invalid check for lockID */
-        if (lock < 0 || lock > NLOCKS)
-        {
+        if (lock < 0 || lock > NLOCKS) {
             restore(ps);
             return (SYSERR);
         }
 
-        if (lptr->num_writer > 0)
-        {
+        if (lptr->num_writer > 0) {
             lptr->num_writer -= 1;
-        }
-        else
-        {
-            if (lptr->num_reader > 0)
-            {
+        } else {
+            if (lptr->num_reader > 0) {
                 lptr->num_reader -= 1;
             }
         }
@@ -76,73 +55,57 @@ int releaseall(int numlocks, int args, ...)
         queue_node = q[lptr->lockqueueTail].qprev;
         lock_prio = type_lock = 0;
 
-        if (q[queue_node].qkey == q[q[queue_node].qprev].qkey)
-        {
+        if (q[queue_node].qkey == q[q[queue_node].qprev].qkey) {
             lock_prio = q[queue_node].qkey;
 
-            while (q[queue_node].qkey == lock_prio)
-            {
-                if (q[queue_node].qtype == READ)
-                {
+            while (q[queue_node].qkey == lock_prio) {
+                if (q[queue_node].qtype == READ) {
                     if (q[queue_node].qtime > readlock_time)
                         reader_lock = queue_node;
                 }
-                else if (q[queue_node].qtype == WRITE)
-                {
+                else if (q[queue_node].qtype == WRITE) {
                     if (q[queue_node].qtime > writelock_time)
                         writer_lock = queue_node;
                 }
 
-                if (reader_lock >= 0 && writer_lock >= 0)
-                {
-                    if (readlock_time - writelock_time < 1000 || writelock_time - readlock_time < 1000)
-                    {
+                if (reader_lock >= 0 && writer_lock >= 0) {
+                    if (readlock_time - writelock_time < 1000 || writelock_time - readlock_time < 1000) {
                         type_lock = writer_lock;
                     }
-                    else if (readlock_time > writelock_time)
-                    {
+                    else if (readlock_time > writelock_time) {
                         type_lock = reader_lock;
                     }
-                    else if (readlock_time < writelock_time)
-                    {
+                    else if (readlock_time < writelock_time) {
                         type_lock = writer_lock;
                     }
                 }
                 queue_node = q[queue_node].qprev;
             }
 
-            if (lock < 0)
-            {
-                while (lptr->lockState == PRFREE)
-                {
+            if (lock < 0) {
+                while (lptr->lockState == PRFREE) {
                     lptr->lockState = READ;
                     lptr->num_reader = lptr->procLog[lock];
                     lptr->lockqueueHead = q[type_lock].qkey;
                 }
             }
-            if (releaseProcFlag == -1 && lptr->num_reader == 0)
-            {
-                if (q[type_lock].qtype == WRITE && lptr->num_writer == 0)
-                {
+            if (releaseProcFlag == -1 && lptr->num_reader == 0) {
+                if (q[type_lock].qtype == WRITE && lptr->num_writer == 0) {
                     releaseWriter(lock, type_lock);
                     releaseProcFlag = 0;
                 }
             }
-            if (lptr->num_writer == 0 && releaseProcFlag == -1 && q[type_lock].qtype == WRITE)
-            {
+            if (lptr->num_writer == 0 && releaseProcFlag == -1 && q[type_lock].qtype == WRITE) {
                 checkReader(lock);
                 releaseProcFlag = 0;
             }
         }
-        if (q[queue_node].qkey != q[q[queue_node].qprev].qkey)
-        {
-            if (q[queue_node].qtype == READ)
-            {
+        if (q[queue_node].qkey != q[q[queue_node].qprev].qkey) {
+            if (q[queue_node].qtype == READ) {
                 if (lptr->num_writer == 0)
                     checkReader(lock);
             }
-            else if (q[queue_node].qtype == WRITE)
-            {
+            else if (q[queue_node].qtype == WRITE) {
                 if (lptr->num_reader == 0 && lptr->num_writer == 0)
                     releaseWriter(lock, queue_node);
             }
@@ -155,24 +118,19 @@ int releaseall(int numlocks, int args, ...)
     return (OK);
 }
 
-void checkReader(int lockid)
-{
+void checkReader(int lockid) {
     struct lockentry *lptr;
     lptr = &locks[lockid];
     int x, q_prev, max = -1;
 
     /* Getting max from all process priorities in the queue */
-    for (x = q[lptr->lockqueueTail].qprev; x != lptr->lockqueueHead; x = q[x].qprev)
-    {
-        if (q[x].qkey > max && q[x].qtype == WRITE)
-        {
+    for (x = q[lptr->lockqueueTail].qprev; x != lptr->lockqueueHead; x = q[x].qprev) {
+        if (q[x].qkey > max && q[x].qtype == WRITE) {
             max = q[x].qkey;
         }
     }
-    for (x = q[lptr->lockqueueTail].qprev; x != lptr->lockqueueHead;)
-    {
-        if (q[x].qkey >= max && q[x].qtype == READ)
-        {
+    for (x = q[lptr->lockqueueTail].qprev; x != lptr->lockqueueHead;) {
+        if (q[x].qkey >= max && q[x].qtype == READ) {
             q_prev = q[x].qprev;
             releaseWriter(lockid, x);
             x = q_prev;
@@ -180,55 +138,48 @@ void checkReader(int lockid)
     }
 }
 
-void releaseWriter(int l_id, int p)
-{
+void releaseWriter(int lockID, int p) {
     struct lockentry *lptr;
-    lptr = &locks[l_id];
+    lptr = &locks[lockID];
     lptr->procLog[p] = 1;
-    proctab[currpid].lockLog[l_id] = 1;
-    if (q[p].qtype == READ)
-    {
-        lptr->num_reader += 1;
+    proctab[currpid].lockLog[lockID] = 1;
+    if (q[p].qtype == READ) {
+        lptr->num_reader = lptr->num_reader + 1;
     }
-    else if (q[p].qtype == WRITE)
-    {
-        lptr->num_writer += 1;
+    else if (q[p].qtype == WRITE) {
+        lptr->num_writer = lptr->num_writer + 1;
     }
 
-    modifyLockPriority(l_id);
-    int i;
-    for (i = 0; i < NPROC; i++)
-    {
-        if (lptr->procLog[i] > 0)
-            updateLockPriority(i);
+    modifyLockPriority(lockID);
+    int procID;
+    for (procID = 0; procID < NPROC; procID++) {
+        if (lptr->procLog[procID] > 0)
+            updateLockPriority(procID);
     }
+
+    /* Dequeue the process as we have updated the priorities */
     dequeue(p);
     ready(p, RESCHNO);
 }
 
-void updateLockPriority(int id)
-{
+void updateLockPriority(int procID) {
     struct pentry *pptr;
-    pptr = &proctab[id];
-    int i = 0, max_val = -1;
+    pptr = &proctab[procID];
+    int lockID = 0, maxPrio = -1;
+
     /* Get the max priority for all processes from the lock log for each process */
-    while (i < NLOCKS)
-    {
-        if (pptr->lockLog[i] > 0)
-        {
-            if (locks[i].lockPriority <= max_val)
-                max_val = max_val * 1;
-            else if (max_val < locks[i].lockPriority)
-                max_val = locks[i].lockPriority;
+    while (lockID < NLOCKS) {
+        if (pptr->lockLog[lockID] > 0) {
+            if (locks[lockID].lockPriority > maxPrio)
+                maxPrio = locks[lockID].lockPriority;
         }
-        i++;
+        lockID++;
     }
 
-    /* Ramping up the inherited priority for the process */
-    if (pptr->pprio <= max_val)
-    {
-        pptr->pinh = max_val;
-    }
-    else if (pptr->pprio > max_val)
+    /* Ramping up the inherited priority for the process if it has a priority lesser than max */
+    if (pptr->pprio <= maxPrio) {
+        pptr->pinh = maxPrio;
+    } else if (pptr->pprio > maxPrio) {
         pptr->pinh = 0;
+    }
 }

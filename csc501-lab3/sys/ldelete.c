@@ -17,33 +17,28 @@ int ldelete(int lockdescriptor)
     struct lockentry *lptr;
     int lock = lockdescriptor / 10;
     int pid;
-    int x = lock * 10, y = 0;
     int lock_index = lockdescriptor - lock * 10;
 
-    if (lock < 0 || lock > NLOCKS || locks[lock].lockState == LFREE)
-    {
+    /* Should not allow deletion of a free lock, or the lock value is an error */
+    if (lock < 0 || lock > NLOCKS || locks[lock].lockState == LFREE) {
         restore(ps);
         return (SYSERR);
     }
 
     lptr = &locks[lock];
     lptr->lockState = LFREE;
-    if (lock_index - locks_traverse >= 2)
-    {
+
+	/* Should strictly be 0 or 1 */
+    if (lock_index - locks_traverse >= 2) {
         restore(ps);
         return (SYSERR);
     }
-    if (lock_index - locks_traverse == 0)
-    {
-        y = (lock_index = locks_traverse) * 100;
-    }
 
     /* Checking if queue empty or not */
-    if (nonempty(lptr->lockqueueHead))
-    {
+    if (nonempty(lptr->lockqueueHead)) {
         pid = getfirst(lptr->lockqueueHead);
-        while (pid != EMPTY)
-        {
+        while (pid != EMPTY) {
+            /* Set the process lock to DELETED */
             proctab[pid].plockret = DELETED;
             ready(pid, RESCHNO);
         }

@@ -60,17 +60,16 @@ SYSCALL kill(int pid)
 		/* Newly added for Read/Write lock process handling*/
 		lock_ptr = &locks[pptr->lockProcID];
 	    if(lock_ptr->procLog[currpid] == 0){
-        	swapPriority(lock_ptr->procLog[currpid],lock_ptr->procLog[currpid]+1);
+        	lock_ptr->procLog[currpid] = lock_ptr->procLog[currpid] + 1;
     	} else if(lock_ptr->procLog[currpid] > 0){
 			temp = 0;
         	while(temp < 0){
             	swapPriority(lock_ptr->procLog[currpid]+NLOCKS,lock_ptr->procLog[currpid]);
         	}
-    	}
-    	else{
+    	} else {
         	swapPriority(lock_ptr->procLog[currpid]+NLOCKS,lock_ptr->procLog[currpid]+NPROC);
     	}
-		lock_HandleKillProcess(pid);
+		lock_handleKillProcess(pid);
 		break;
 	case PRSLEEP:
 	case PRTRECV:	unsleep(pid);
@@ -82,7 +81,7 @@ SYSCALL kill(int pid)
 }
 
 /* Handling the kill call and updating priority of lock accordingly */
-void lock_HandleKillProcess(int pid){
+void lock_handleKillProcess(int pid) {
 	struct	pentry	*pptr;	
 	struct  lockentry *lptr;
 	dequeue(pid);
@@ -91,10 +90,12 @@ void lock_HandleKillProcess(int pid){
 
 	locks[pptr->lockProcID].procLog[pid] = 0;
 	modifyLockPriority(pptr->lockProcID);
-	int lockid;
-	for(lockid=0; lockid < NPROC; lockid++){
-		if(lptr->procLog[lockid] > 0)
-			updateLockPriority(lockid);
+
+	/* Update the lock priority for all the processes in the lock's processlog */
+	int procID;
+	for(procID=0; procID < NPROC; procID++){
+		if(lptr->procLog[procID] > 0)
+			updateLockPriority(procID);
 	}
 	pptr->pstate = PRFREE;
 }

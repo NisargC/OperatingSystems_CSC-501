@@ -27,39 +27,42 @@ int resched()
 		return OK;
 	}
 	int pid = q[rdytail].qprev;
-	int max_prio = -1,max_pid=-1;
-	int temp=0;
+	
+	/* PID of process with max priority */
+	int maxPriority = -1,maxPID=-1;
+	int tempPrio=0;
+
+	/* Calculate the max priority from the queue */
 	while(pid != rdyhead){
-		max_prio = temp;
-		max_pid = pid;
+		maxPriority = tempPrio;
+		maxPID = pid;
 		pid = q[pid].qprev;
 	}
+
 	pid = q[rdytail].qprev;
 	while(pid != rdyhead){
 		if(proctab[pid].pinh == 0){
-			temp = proctab[pid].pprio;
+			tempPrio = proctab[pid].pprio;
 		} else {
-			temp = proctab[pid].pinh;
+			tempPrio = proctab[pid].pinh;
 		}
-		if(temp > max_prio){
-			max_prio = temp;
-			max_pid = pid;
+		if(tempPrio > maxPriority){
+			maxPriority = tempPrio;
+			maxPID = pid;
 		}
 		pid = q[pid].qprev;
 	}
-	int prio_comp = -1;
-	if(optr->pinh == 0){
-		if(max_pid < optr->pprio && optr->pstate == PRCURR){
-			prio_comp = 1;
+
+	/* If the inhertited priority of the old process is 0, check if it's priority is the max */
+	if(optr->pstate == PRCURR) {
+		if(optr->pinh == 0) {
+			if(maxPID < optr->pprio)
+				return OK;
+		} else {
+			if(maxPID < optr->pinh)
+				return OK;
 		}
 	}
-	if(optr->pinh!=0 && max_pid < optr->pinh){
-		if(optr->pstate == PRCURR){
-			prio_comp = 1;
-		}
-	}
-	if(prio_comp==1)
-		return OK;
 	
 	/* no switch needed if current process priority higher than next */
 	if (((optr= &proctab[currpid])->pstate == PRCURR) && (lastkey(rdytail)<optr->pprio)) {
@@ -75,8 +78,8 @@ int resched()
 
 	/* remove highest priority process at end of ready list */
 	
-	currpid = max_pid;
-    dequeue(max_pid);
+	currpid = maxPID;
+    dequeue(maxPID);
 	nptr = &proctab[currpid];
 	//nptr = &proctab[ (currpid = getlast(rdytail)) ];
 

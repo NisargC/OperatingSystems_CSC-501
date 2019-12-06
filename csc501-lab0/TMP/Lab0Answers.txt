@@ -1,0 +1,81 @@
+
+Question 1) Assuming the XINU text begins at address 0x0, draw a rough diagram of XINU's memory layout with addresses derived from your experimental measurements. Include the information you uncovered from running your version of printsegaddress() and printprocstks().
+
+Answer:
+Usually, the memory is organized into different segments - text, data, BSS, heap and the runtime stack. In Xinu, all the processes share the text, data, BSS and heap sections, but each process has its own stack space. Using the system calls and my own understanding of memory architecture, the following is the way the memory is arranged.
+To better understand the arrangement of the memory, I have added a process X with priority 20.
+
+	|-------------------------------| 	Base Pointer : 0x00fffffc
+	|				|
+	|				|
+	|  	PROCESS : prnull	|
+	|		           --> 	|	Stack Pointer : 0x00ffff2c
+	|				|
+	|-------------------------------|	Limit : 0x00fff000
+	|				|
+	|-------------------------------| 	Base Pointer : 0x00ffeff8
+	|				|						|
+	|				|						|
+	|  	PROCESS : main		|						| Stack
+	|	stack 4K		|                                               | Growth
+	|		           --> 	|	Stack Pointer : 0x00ffef90		|
+	|				|                                               |
+	|-------------------------------|	Limit : 0x00ffdffc			|
+	|				|                                               |
+	|-------------------------------|	Base : 0x00ffdff8		      \ | /
+	|				|                                              \|/
+	|				|
+	| 	PROCESS : X		|
+	|	stack 4K		|
+	|			   --> 	|	Stack Pointer : 0x00ffdec4
+	|				|
+	|-------------------------------|	Limit : 0x00ffcffc
+	.				.
+	.	 Free Space		.
+	.				.
+	|-------------------------------|		
+	|  	   			|
+	|		heap		|		
+	|				|		
+	|-------------------------------|	end : 0x00028618
+	|				|
+	|				|
+	|  	 	bss		|
+	|				|
+	|				|
+	|-------------------------------|	edata : 0x0001ea9d
+	|				|
+	|				|
+	|		data		|
+	|				|
+	|				|
+	|-------------------------------|	etext : 0x000194dd
+	|				|
+	|		text		|
+	|				|
+	|-------------------------------|	start : 0
+
+
+Question 2) What is the difference in stack top address before and after calling printtos()? Draw a diagram to illustrate what are the contents of the items pushed into the stack between these two time points.
+
+Answer: 
+The address at top of the run time stack just before calling printtos() is 0x00ffeff4
+The address at top of the run time stack just after calling printtos() is 0x00ffefec
+This is because when the printtos() function is called, the contents of the return address and base pointer of main are both pushed onto the stack.
+
+	|---------| 
+	|         |   0x00ffefec -> After printtos() call
+	|   EBP	  | 
+	|---------|
+	|         |
+	| return  | 
+	| address |
+	|---------|  0x00ffeff4 -> Before printtos() call
+
+
+Question 3) In a stack frame, local variables are stored below the top of the stack. In task 3, does your result show all the local variables declared in your printtos function? If not, can you explain that? (hint: try to disable the compiler optimization by specifing -O0 in your Makefile)
+
+Answer:
+Due to compiler optimization being enabled by default in the Makefile, the local variables do not show up since they are not used anywhere. Since the local variables are not used anywhere, the compiler optimizes the code by not pushing the local varaibles on the stack, thus saving memory.
+In order to see these variables, we need to disable compiler optimization. In this case, the compiler will push the local values onto the stack and printtos() would print them.
+

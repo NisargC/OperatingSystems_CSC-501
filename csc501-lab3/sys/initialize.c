@@ -166,6 +166,7 @@ LOCAL int sysinit()
 		}
 		i++;
 	}
+	/* The lock data structure for NLOCKS locks will be initialized in linit */
 	linit();
 
 	pptr = &proctab[NULLPROC];	/* initialize null process entry */

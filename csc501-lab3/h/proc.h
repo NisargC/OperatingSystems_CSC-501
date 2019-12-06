@@ -63,7 +63,7 @@ struct	pentry	{
 	int	fildes[_NFILE];		/* file - device translation	*/
 	int	ppagedev;			/* pageing dgram device		*/
 	int	pwaitret;
-	int l_proc;				/* Lock id */
+	int lockProcID;			/* Lock id */
     int pinh;				/* inherited priority */
     int lockLog[NLOCKS];	/* array of locks held */
 	int plockret;			/* Whether the lock is DELETED or not */

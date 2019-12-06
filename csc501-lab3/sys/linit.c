@@ -8,25 +8,32 @@ int nextlock;
 int locks_traverse;
 
 /* Initialize the lock data structure on system startup */
-void linit(){
+void linit()
+{
     locks_traverse = 0;
-    struct lockentry *lptr;
-    int lockCount=0, procCount=0;
-	int temp;
     nextlock = NLOCKS - 1;
 
-    while(lockCount < NLOCKS){
+    struct lockentry *lptr;
+    int lockCount = 0, procCount = 0;
+    int temp;
+
+    while (lockCount < NLOCKS)
+    {
         lptr = &locks[lockCount];
         lptr->lockState = LFREE;
-        lptr->lockqueueHead = newqueue();
-        temp = lptr->lockqueueHead;
-	    lptr->lockPriority  = -1;	
-        lptr->lockqueueTail = 1 + temp;
+        lptr->lockPriority = -1;
 
-        procCount=0;
-        for (procCount = 0; procCount<NPROC; procCount++){
+        /* Initializing the process log */
+        procCount = 0;
+        for (procCount = 0; procCount < NPROC; procCount++)
+        {
             lptr->procLog[procCount] = 0;
         }
+
+        /* Initilizing the lock queue head and tail */
+        lptr->lockqueueHead = newqueue();
+        temp = lptr->lockqueueHead;
+        lptr->lockqueueTail = 1 + temp;
 
         lockCount++;
     }

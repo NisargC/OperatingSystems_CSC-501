@@ -58,7 +58,7 @@ SYSCALL kill(int pid)
 
     case PROC_LOCK:
 		/* Newly added for Read/Write lock process handling*/
-		lock_ptr = &locks[pptr->l_proc];
+		lock_ptr = &locks[pptr->lockProcID];
 	    if(lock_ptr->procLog[currpid] == 0){
         	swapPriority(lock_ptr->procLog[currpid],lock_ptr->procLog[currpid]+1);
     	} else if(lock_ptr->procLog[currpid] > 0){
@@ -87,10 +87,10 @@ void lock_HandleKillProcess(int pid){
 	struct  lockentry *lptr;
 	dequeue(pid);
 	pptr = &proctab[pid];
-	lptr = &locks[pptr->l_proc];
+	lptr = &locks[pptr->lockProcID];
 
-	locks[pptr->l_proc].procLog[pid] = 0;
-	modifyLockPriority(pptr->l_proc);
+	locks[pptr->lockProcID].procLog[pid] = 0;
+	modifyLockPriority(pptr->lockProcID);
 	int lockid;
 	for(lockid=0; lockid < NPROC; lockid++){
 		if(lptr->procLog[lockid] > 0)

@@ -4,22 +4,24 @@
 #include <proc.h>
 #include "lock.h"
 
-int lock(int ldes1, int type, int priority) {
+int lock(int ldesc, int type, int priority) {
     STATWORD ps;    
     disable(ps);
 
     int count = 10;
     struct lockentry *lptr;
     struct pentry *pptr;
-    
-    int lock = (int)(ldes1/10);
+
+    int lock = (int)(ldesc/10);
     lptr = &locks[lock];
+
+    /* If lock value is invalid or lock is not free, return error */
 	if(lock < 0 || lock>NLOCKS || lptr->lockState == LFREE){
 		restore(ps);
 		return(SYSERR);
 	}
 
-    int lock_index = ldes1;
+    int lock_index = ldesc;
     int iter;
     for (iter = 0; iter<count; iter++){
         lock_index -= lock;
@@ -72,16 +74,13 @@ int lock(int ldes1, int type, int priority) {
             lptr->procLog[currpid] = 1;
             proctab[currpid].lockLog[lock] = 1;
             updateLockPriority(currpid);
-            switch(type){
-                case READ:
-                    lptr->num_reader++;
-                    break;
-                case WRITE:
-                    lptr->num_writer++;
-                    break;
-                default:
-                    break;
+
+            if(type == READ) {
+                lptr->num_reader++;
+            } else if(type == WRITE) {
+                lptr->num_writer++;
             }
+
             restore(ps);
             return(OK);
     } else if (should_wait == 1){
@@ -89,11 +88,11 @@ int lock(int ldes1, int type, int priority) {
             modifyLockPriority(lock);
             struct lockentry *temp_lock;
             temp_lock = &locks[lock];
-            int i=0;
-            while(i < NPROC){
-                if(temp_lock->procLog[i] > 0)
-                    updateLockPriority(i);
-                i++;
+            int procIndex=0;
+            while(procIndex < NPROC){
+                if(temp_lock->procLog[procIndex] > 0)
+                    updateLockPriority(procIndex);
+                procIndex++;
             }
 
             resched();
@@ -101,10 +100,13 @@ int lock(int ldes1, int type, int priority) {
             return(pptr->plockret);
     }
     if(lptr->procLog[currpid] == 0){
+        /* If the current process is not set for this lock, update it */
         swapPriority(lptr->procLog[currpid],lptr->procLog[currpid]+1);
     }
     else if(lptr->procLog[currpid] > 0){
         int i=0;
+
+        /* TODO: Improve this while loop and check edge cases */
         while(i < 0){
             swapPriority(lptr->procLog[currpid]+NLOCKS,lptr->procLog[currpid]);
         }
@@ -118,10 +120,11 @@ int lock(int ldes1, int type, int priority) {
 }
 
 /* Go through the entire queue to get the max priority and set that for the current process */
-void modifyLockPriority(int l_id){
+void modifyLockPriority(int lockID){
     struct lockentry *lptr;
-    lptr = &locks[l_id];
-    int x = q[lptr->lockqueueTail].qprev,max=0;
+    lptr = &locks[lockID];
+    int x = q[lptr->lockqueueTail].qprev;
+    int max=0;
 
     while(x != lptr->lockqueueHead){
         if(proctab[x].pprio > max){
@@ -138,10 +141,21 @@ int set_params(int proc_id,int prio,int type,int lock){
     lptr = &locks[lock];
     pptr = &proctab[proc_id];
     pptr->pstate = PROC_LOCK;
-    pptr->l_proc = lock;
+    pptr->lockProcID = lock;
     pptr->plockret = OK;
     insert(proc_id,lptr->lockqueueHead,prio);
     q[proc_id].qtype = type;
     q[proc_id].qtime = ctr1000;
     return(OK);
+}
+
+/* Generic helper method for switching priority */
+void swapPriority(int global_max, int local_max) {
+
+    /* Swapping should only happen if priority is a valid positive value */
+	if(global_max >= 0 && local_max >=0){
+		int temp = global_max;
+		global_max = local_max;
+		local_max = temp;
+	}
 }

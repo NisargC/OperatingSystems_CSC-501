@@ -10,13 +10,13 @@
 #define LUSED  1
 
 struct lockentry {
-    char lockState;
-    int  num_reader;
-    int  num_writer;
-    int  lockqueueHead;
-    int  lockqueueTail;
-    int  lockPriority;
-    int  procLog[NPROC];
+    char lockState;         /* The state LFREE or LUSED	*/
+    int  num_reader;        /* Number of readers contending for the lock */
+    int  num_writer;        /* Number of writers contending for the lock */
+    int  lockqueueHead;     /* Queue index of head of list */
+    int  lockqueueTail;     /* Queue index of tail of list */
+    int  lockPriority;      /* Lock priority */
+    int  procLog[NPROC];    /* Process that acquires this lock */
 };
 
 extern struct lockentry locks[];
@@ -26,8 +26,6 @@ extern unsigned long ctr1000;
 
 extern void modifyLockPriority(int lid);
 extern void updateLockPriority(int pid);
-extern void getInheritedPrio(int lid);
-extern void releaseWriter(int,int);
 extern void swapPriority(int,int);
 
 #endif

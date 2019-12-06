@@ -36,10 +36,11 @@ SYSCALL chprio(int pid, int newprio)
 	if (isbadpid(pid) || newprio<=0 || (pptr = &proctab[pid])->pstate == PRFREE) {
 		lockCount = -1;
 	}
+
 	updateLockPriority(pid);
 	while(pptr->pstate == PROC_LOCK){
-		modifyLockPriority(pptr->l_proc);
-		updateLockPriority(pptr->l_proc);
+		modifyLockPriority(pptr->lockProcID);
+		updateLockPriority(pptr->lockProcID);
 		lockCount = 1;
 		break;
 	}

@@ -15,7 +15,7 @@ struct	qent	{		/* one for each process plus two for	*/
 	int	qnext;				/* pointer to next process or tail */
 	int	qprev;				/* pointer to previous process or head */
 	int	qtype;				/* Whether the queue element is READ or WRITE */
-	unsigned long qtime;
+	unsigned long qtime;	/* Time for which process should remian in wait state in the queue */
 };
 
 extern	struct	qent q[];

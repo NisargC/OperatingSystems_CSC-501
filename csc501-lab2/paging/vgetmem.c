@@ -27,6 +27,7 @@ WORD	*vgetmem(nbytes)
 
 	if(virtual_memlist_pointer->mnext == (struct mblock *)NULL || nbytes == 0) {
 		restore(ps);
+		kprintf("Syserr in vgetmem memlist null");
 		return ((WORD *)SYSERR);
 	}
 
@@ -58,6 +59,7 @@ WORD	*vgetmem(nbytes)
 	}
 
 	restore(ps);
+	kprintf("Syserr in vgetmem memlist exits while");
 	return ((WORD *)SYSERR);
 }
 

@@ -66,6 +66,7 @@ typedef struct{
 typedef struct{
   int frm_id;               /* Frame id*/
   int next_frame;           /* Next frame */
+  int frm_age;
 }fifo_node;
 
 extern bs_map_t bsm_tab[];
@@ -74,6 +75,7 @@ extern fr_map_t frm_tab[];
 /* Circular queue */
 extern fifo_node fifo_frame[];
 extern int fifo_head;
+extern void initialize_frames_SC_AGING();
 
 /* Prototypes for required API calls */
 SYSCALL xmmap(int, bsd_t, int);

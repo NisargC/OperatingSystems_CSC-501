@@ -43,6 +43,10 @@ SYSCALL pfint()
 	pagedirectory_entry = pdbr + pagedirectory_offset * sizeof(pd_t);
 	pagetable_entry = (pt_t*)(pagedirectory_entry->pd_base * NBPG + pagetable_offset * sizeof(pt_t));
 
+	kprintf("PT_Offset %d",pagetable_offset);
+	kprintf("PD_Offset %d",pagedirectory_offset);
+	kprintf("PDBR %d",pdbr);
+
 	if(pagedirectory_entry->pd_pres == 0) {
 		pagetable_frame_index = set_page_table();
 
@@ -83,6 +87,8 @@ SYSCALL pfint()
 		
 		bsm_lookup(currpid,requested_virtual_address,&bs_reference,&bs_page_offset);
 		read_bs((char*)((FRAME0+empty_frame_index)*NBPG),bs_reference,bs_page_offset);
+
+		insert_frame_SC_AGING(empty_frame_index);
 
 	}
 

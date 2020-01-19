@@ -22,6 +22,8 @@ extern	int	main();	/* address of user's main prog	*/
 
 extern	int	start();
 
+extern void initialize_frames_SC_AGING();
+
 LOCAL		sysinit();
 
 /* Declarations of major kernel variables */
@@ -55,7 +57,7 @@ fr_map_t frm_tab[NFRAMES];
 fifo_node fifo_frame[NFRAMES+1];
 int fifo_head = -1;
 
-extern void set_pageDirectory(int);
+extern void page_directory_allocation(int);
 
 /************************************************************************/
 /***				NOTE:				      ***/
@@ -220,6 +222,7 @@ sysinit()
 
 	init_bsm();
 	init_frm();
+	initialize_frames_SC_AGING();
 
 	int frame_number = 0;
 
@@ -252,7 +255,7 @@ sysinit()
 		}
 	}
 
-	set_pageDirectory(NULLPROC);
+	page_directory_allocation(NULLPROC);
 	write_cr3(proctab[NULLPROC].pdbr);
 	enable_paging();
 

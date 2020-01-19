@@ -84,6 +84,7 @@ SYSCALL bsm_lookup(int pid, long vaddr, int* store, int* pageth) {
 	while(count < MAX_BS) {
 		if(bsm_tab[count].bs_pid == pid) {
 			/* Updating the values of pageth and store as the page is found */
+			kprintf("In bsm_lookup in if in while");
 			*pageth = (vaddr/NBPG) - bsm_tab[count].bs_vpno;
 			*store = count;
 			restore(ps);
@@ -136,9 +137,12 @@ SYSCALL bsm_unmap(int pid, int vpno, int flag) {
 			/* Fetching the page using lookup and updating it */
 			bsm_lookup(pid, virt_addr, &backing_store_num, &pageth);
 			write_bs((count+NFRAMES)*NBPG, backing_store_num, pageth);
+			kprintf("In bsm_unmap in if in while");
   		}
 		count = count + 1;
 	}
+
+	kprintf("In bsm_unmap after while");
 
 	/* Unmapping the Backing store */
 	bsm_tab[backing_store_num].bs_vpno = VPN_BASE;

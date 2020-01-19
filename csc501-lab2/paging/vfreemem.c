@@ -19,6 +19,7 @@ SYSCALL	vfreemem(block, size)
 	disable(ps);
 	if (size == 0 || block < BS_VIRTUAL_BASE_PAGE * NBPG) {
 		restore(ps);
+		kprintf("Syserr in vfreemem size error");
 		return SYSERR;
 	}
 	struct mblock *mem_list_pointer;

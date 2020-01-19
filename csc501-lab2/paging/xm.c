@@ -57,6 +57,7 @@ SYSCALL xmunmap(int virtpage)
     }
 
     bsm_unmap(currpid, virtpage);
+    kprintf("In xnunmap after bsm_unmap");
     restore(ps);
     return OK;
 }

@@ -31,29 +31,28 @@ OUTPUT FOR TASK1.C :-
 Testing with semaphores.
 Starting A.
 A
-A: in CS
+A: in Critical Section
 Starting B.
-+++++B before sleep
-+++++B after waking up
+B before sleep
+B after waking up
 Starting C.
 C
-A: moving outside CS.
-C: in CS
-C: moving outside CS.
+A: moving outside Critical Section.
+C: in Critical Section
+C: moving outside Critical Section.
 
 Testing with reader/writer locks using priority inversion.
 Starting A.
 Process A
 A: Lock acquired.
 Starting B.
-+++++B before sleep
+B before sleep
 Starting C.
 Process C
 A: Releasing lock.
 C: Lock acquired
 C: Releasing lock
-+++++B after waking up
-
+B after waking up
 
 2) Synchronization is a quite complex issue in operating systems. To show your understanding about process synchronization, you are asked to point out a reader/writer synchronization issue in this pesudo-code: task2_sync_issue.c. Multiple reader threads can execute this code concurrently by calling do_update. All the variables starting with global_ are global variables. You are asked to describe the potential issue caused by the incorrect synchronization and point out at least one possible thread interleaving that would trigger the problem. Put your answer in Lab3Answers.txt mentioned above.
 
